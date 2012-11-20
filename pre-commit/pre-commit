@@ -1,0 +1,125 @@
+#!/usr/bin/php
+<?php
+
+/**
+ *
+ * Call additional checks before commit. Can be used within PRE-COMMIT hook.
+ *
+ * by Dmitri Pluschaev d.pluschaev@sugarcrm.com
+ *
+ */
+
+
+$standard = dirname(__FILE__) . '/cs/standards/sugar_cs.xml';
+$allowed_extensions = array('php'); // lowercase
+$root=dirname(__FILE__) . '/';
+$project_dir=$root.'../../';
+
+$cs_classes_directory="{$root}cs/CodeSniffer";
+define('CODESNIFFER_CLASS_DIRECTORY', $cs_classes_directory);
+require_once("{$root}cs/CsWrapper.php");
+
+
+$get_diff = 'git diff --cached --diff-filter=ACM';
+
+// start process
+$exit_result = 1;
+
+m();
+m('Checking code style for current commit');
+
+
+$csWrapper = new CsWrapper();
+$csWrapper->cswSetStandard($standard);
+
+chdir($project_dir);
+// get list of files to commit
+exec($get_diff, $out);
+$diff=analyzeDiff($out);
+foreach ($diff as $file=>$data) {
+    // check extension
+    $ext = pathinfo($file, PATHINFO_EXTENSION);
+    if (in_array(strtolower($ext), $allowed_extensions)) {
+        // check location
+        $file_abs = "$project_dir/$file";
+        if (is_file($file_abs)) {
+            $csWrapper->cswAddCode($file, file_get_contents($file_abs), array_keys($data['lines']));
+        }
+    }
+}
+
+// Execute checks
+try {
+    $data = @$csWrapper->cswExecute();
+} catch (Exception $e) {
+    m('Code sniffer error: ' . $e->getMessage());
+    m('Use --no-verify option to force commit');
+    die(1);
+}
+
+$result=generateShortReport((array)$data);
+m($result['message']."\r\n");
+
+m(($result['code'] ? 'Commit is not recommended' : 'Continue committing')."\r\n");
+die($result['code']);
+
+function analyzeDiff(array $diff, $rep_dir = '/')
+{
+    $out = array();
+    $line = $is_new = 0;
+    foreach ($diff as $row) {
+        if (preg_match("~^---\s(.*)~", $row, $matches)) {
+            $path_minus = substr($matches[1], strpos($matches[1], $rep_dir)+1);
+            continue;
+        } elseif (preg_match("~^\+\+\+\s(.*)~", $row, $matches)) {
+            $path = substr($matches[1], strpos($matches[1], $rep_dir)+1);
+            $out[$path] = isset($out[$path]) ? $out[$path] : array('lines' => array());
+            $out[$path]['is_new'] = $path_minus != $path;
+        } elseif (preg_match("~^@@\ -[0-9]+(,[0-9]+)?\ \+([0-9]+)(,[0-9]+)?\ @@.*$~", $row, $matches)) {
+            $line = $matches[2];
+        } elseif (preg_match("~^\+(.*)~", $row, $matches)) {
+            $out[$path]['lines'][$line] = $matches[1];
+            $line++;
+        } elseif (preg_match("~^[^-]+(.*)~", $row, $matches)) {
+            $line++;
+        } elseif (preg_match("~.+~", $row, $matches)) {
+            $line++;
+        }
+    }
+    return $out;
+}
+
+function generateShortReport(array $data)
+{
+    if (empty($data)) {
+        return array('code'=>0,'message'=>'Nothing to check');
+    }
+    $issues=0;
+    foreach($data as $item){
+        $issues+=sizeof($item['report_for_lines']);
+    }
+    if ($issues == 0) {
+        return array('code'=>0,'message'=>'All checks passed');
+    }
+    $report = "Files checked: ".sizeof($data).", issues: {$issues}\r\n";
+
+    foreach ($data as $item) {
+        if (!empty($item['report_for_lines'])) {
+            $report .= "\r\n {$item['id']}\r\n";
+            foreach ($item['report_for_lines'] as $line => $columns) {
+                foreach ($columns as $col => $errors) {
+                    foreach ($errors as $index => $issue) {
+                        $report .= "  {$line}/$col: {$issue['message']} ({$issue['type']})\r\n";
+                    }
+                }
+            }
+
+        }
+    }
+    return array('code'=>1,'message'=>$report);
+}
+
+function m($text = '', $no_eof = false)
+{
+    echo $text . ($no_eof ? '' : "\r\n");
+}

@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<ruleset name="Sugar Coding Standard">
+    <!--
+        SugarCRM coding standard
+
+        Customization rules: http://pear.php.net/manual/tr/package.php.php-codesniffer.annotated-ruleset.php
+    -->
+
+    <!--
+       The name attribute of the ruleset tag is displayed
+       when running PHP_CodeSniffer with the -v command line
+       argument. The description tag below is not displayed anywhere
+       except in this file, so it can contain information for
+       developers who may change this file in the future.
+    -->
+    <description>SugarCRM Coding Standard</description>
+
+    <!-- include all PSR2 sniffs -->
+    <rule ref="PSR2">
+        <!-- Exclude some sniffs from PSR2 -->
+        <exclude name="PSR1.Classes.ClassDeclaration.MissingNamespace"/>
+    </rule>
+
+    <!-- include all sniffs from current directory -->
+    <rule ref="./"/>
+
+</ruleset>

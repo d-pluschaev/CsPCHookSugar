@@ -1,0 +1,16 @@
+
+Git pre-commit hook which checking your changes by PHP_CodeSniffer. Adjusted for SugarCRM.
+
+Usage:
+
+1. create directory
+2. fetch code:
+git clone https://github.com/d-pluschaev/CsPCHookSugar.git ./
+
+(Linux)
+3. ./install.sh <your_target_project_directory>
+
+(Other)
+3. Copy file "pre-commit" and directory "cs" to <your_target_project_directory>/.git/hooks
+
+4. have fun
