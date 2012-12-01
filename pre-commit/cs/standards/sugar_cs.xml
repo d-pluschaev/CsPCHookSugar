@@ -19,6 +19,22 @@
     <rule ref="PSR2">
         <!-- Exclude some sniffs from PSR2 -->
         <exclude name="PSR1.Classes.ClassDeclaration.MissingNamespace"/>
+
+        <!-- A file should declare new symbols (classes, functions, constants, etc.) and cause no other side effects,
+        or it should execute logic with side effects, but should not do both. The first symbol is defined on line 5 and
+        the first side effect is on line 3. -->
+        <exclude name="PSR1.Files.SideEffects.FoundWithSymbols"/>
+
+
+        <!-- BEGIN Sniffs that wrapped in custom sniffs -->
+        <!-- if (!defined('sugarEntry')) define('sugarEntry', true); -->
+        <!-- Inline control structures are not allowed   -->
+        <exclude name="Generic.ControlStructures.InlineControlStructure.NotAllowed"/>
+
+        <!-- Constants must be uppercase; expected 'SUGARENTRY' but found 'sugarEntry' -->
+        <exclude name="Generic.NamingConventions.UpperCaseConstantName.ConstantNotUpperCase"/>
+        <!-- END Sniffs that wrapped in custom sniffs -->
+
     </rule>
 
     <!-- include all sniffs from current directory -->
