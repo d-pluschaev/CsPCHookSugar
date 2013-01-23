@@ -19,6 +19,28 @@ $cs_classes_directory="{$root}cs/CodeSniffer";
 define('CODESNIFFER_CLASS_DIRECTORY', $cs_classes_directory);
 require_once("{$root}cs/CsWrapper.php");
 
+// BEGIN LINT CHECK CODE
+$lintCheck = "git status | egrep 'modified|new file' | grep '\.php'"
+    ." | sed -e 's/#\tmodified:   //' | sed -e 's/#\tnew file:   //'"
+    ." | xargs -I enterprisepsisawesome find enterprisepsisawesome -exec php -l '{}' \; 2>&1";
+exec($lintCheck, $lintOut);
+$syntaxErrors = array();
+foreach ($lintOut as $k => $d) {
+    if (strpos($d, "PHP Parse error") !== false) {
+        $syntaxErrors[] = $d;
+    }
+}
+
+if (!empty($syntaxErrors)) {
+    echo "Found syntax errors:\n";
+    foreach ($syntaxErrors as $err) {
+        echo "{$err}\n";
+    }
+
+    echo "\nPlease fix and commit again.\n";
+    die(1);
+}
+// END LINT CHECK CODE
 
 $get_diff = 'git diff --cached --diff-filter=ACM';
 
