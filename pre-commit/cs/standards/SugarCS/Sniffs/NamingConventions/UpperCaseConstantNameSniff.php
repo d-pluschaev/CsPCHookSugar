@@ -13,7 +13,7 @@ class SugarCS_Sniffs_NamingConventions_UpperCaseConstantNameSniff extends
     {
         // Lines which will be ignored (without whitespaces)
         $ignoreLines = array(
-            "define('sugarEntry',true);" => true,
+            "sugarEntry" => true,
         );
 
         $tokens = $phpcsFile->getTokens();
@@ -29,7 +29,11 @@ class SugarCS_Sniffs_NamingConventions_UpperCaseConstantNameSniff extends
             }
         }
 
-        if (!isset($ignoreLines[$codeStr])) {
+        $matches = false;
+        foreach ($ignoreLines as $line => $flag) {
+            $matches += strpos($codeStr, $line) !== false;
+        }
+        if (!$matches) {
             parent::process($phpcsFile, $stackPtr);
         }
     }
